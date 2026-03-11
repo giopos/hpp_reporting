@@ -1,0 +1,8 @@
+/12x25m Data TestWA.xlsx
+*.pdf
+/backup
+/favorites.json
+/usage_logs.jsonl
+__pycache__/
+.DS_Store
+.vscode/
