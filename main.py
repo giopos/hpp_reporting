@@ -433,13 +433,13 @@ def show_upload_interface():
     
     with col2:
         # Template download section
-        st.markdown("### 📥 Download Template")
+        st.markdown("### Download Template")
         st.markdown("First time using this app? Download the Excel template to ensure your data is formatted correctly.")
         
         template_bytes = load_template_file()
         if template_bytes:
             if st.download_button(
-                label="⬇️ Download Excel Template",
+                label="⬇ Download Excel Template",
                 data=template_bytes,
                 file_name="12x25m_Data_Template.xlsx",
                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -452,7 +452,7 @@ def show_upload_interface():
         st.markdown("---")
         
         # File upload section
-        st.markdown("### 📤 Upload Your Data")
+        st.markdown("### Upload Your Data")
         st.markdown("Upload your completed Excel file with swimmer test data:")
         
         uploaded_file = st.file_uploader(
@@ -476,7 +476,7 @@ def show_upload_interface():
                     validation = validate_uploaded_file(df)
                     
                     if validation['valid']:
-                        st.success(f"✅ File uploaded successfully! Found {len(df)} records.")
+                        st.success(f"File uploaded successfully! Found {len(df)} records.")
                         
                         # Show data summary
                         swimmers_count = df['Swimmer'].nunique()
@@ -493,7 +493,7 @@ def show_upload_interface():
                             st.metric("Sessions", len(dates))
                         
                         if validation['warnings']:
-                            with st.expander("⚠️ Additional columns detected (not used in analysis)"):
+                            with st.expander("Additional columns detected (not used in analysis)"):
                                 st.write(", ".join(validation['warnings']))
                         
                         # Store in session state
@@ -503,7 +503,7 @@ def show_upload_interface():
                         tracker.track_file_upload(uploaded_file.name, len(df), swimmers_count)
                         
                         st.markdown("---")
-                        st.info("👇 Scroll down to view the dashboard")
+                        st.info("Scroll down to view the dashboard")
                         
                         return df
                     else:
@@ -536,7 +536,7 @@ def show_upload_interface():
         # Instructions when no file uploaded
         st.markdown("""
         <div style='background-color: #F3F4F6; padding: 1rem; border-radius: 8px; margin-top: 1rem;'>
-            <h4 style='margin-top: 0; color: #1F2937;'>📝 Required Columns</h4>
+            <h4 style='margin-top: 0; color: #1F2937;'>Required Columns</h4>
             <ul style='color: #6B7280;'>
                 <li><strong>Swimmer</strong> - Athlete name</li>
                 <li><strong>Gender</strong> - M/F</li>
@@ -544,7 +544,7 @@ def show_upload_interface():
                 <li><strong>Date</strong> - Test date</li>
                 <li><strong>Time 1</strong> through <strong>Time 12</strong> - Split times in seconds for each 25m rep</li>
             </ul>
-            <h4 style='color: #1F2937;'>✨ Optional Columns</h4>
+            <h4 style='color: #1F2937;'>Optional Columns</h4>
             <ul style='color: #6B7280;'>
                 <li>Stroke Rate, Stroke Count, Stroke Efficiency Index (1-12)</li>
                 <li>CV (Critical Velocity), Dprime - will be calculated if not provided</li>
