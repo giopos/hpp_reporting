@@ -1,4 +1,4 @@
-# Swimmer Performance Dashboard
+# HPP Physiology Testing
 
 A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data. This tool allows coaches and athletes to upload performance data, visualize metrics like Critical Velocity (CV) and D', evaluate performance against cohort percentiles, and generate customized PDF reports.
 
