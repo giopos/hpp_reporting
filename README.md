@@ -10,7 +10,6 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
 - **Percentile Analysis**: Compare athlete performance (Peak Speed, CV, D') against a built-in cohort database using reference percentile data.
 - **Historical Tracking**: Track a swimmer's progress over multiple test dates and identify trends in performance.
 - **PDF Reporting**: Generate detailed individual or bulk PDF reports with velocity curves, percentile rankings, and historical comparisons. Supports custom logo uploads.
-- **Usage Tracking**: Built-in silent activity logging for dashboard usage statistics, accessible via an admin panel.
 
 ## Installation & Setup
 
@@ -53,7 +52,6 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
 ## Project Structure
 
 - `main.py`: The core Streamlit application containing the UI, data processing, and PDF generation logic.
-- `tracker.py`: Utility script for logging app usage and exporting logs to GitHub.
 - `requirements.txt`: Python package dependencies.
 - `percentile_data.json`: Reference database for the cohort percentile rankings.
 - `logo.jpg`: Default logo used in PDF report exports.
@@ -65,21 +63,3 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
 - **Data Manipulation**: Pandas, NumPy, SciPy
 - **Data Visualization**: Plotly, Matplotlib
 - **Reporting**: Matplotlib (PDF Generation)
-
-## Admin Configuration
-
-To access the "Usage Logs" panel in the sidebar, you can configure an admin password in your Streamlit secrets (`.streamlit/secrets.toml`):
-
-```toml
-[admin]
-password = "your_secure_password"
-```
-
-If not configured, the default password is `admin12x25`.
-
-To enable automatic GitHub log pushing, configure the following secrets:
-```toml
-[github]
-token = "your_github_personal_access_token"
-repo = "username/repo-name"
-```
