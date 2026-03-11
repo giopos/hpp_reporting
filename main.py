@@ -502,10 +502,8 @@ def show_upload_interface():
                         st.session_state['upload_timestamp'] = pd.Timestamp.now()
                         tracker.track_file_upload(uploaded_file.name, len(df), swimmers_count)
                         
-                        st.markdown("---")
-                        st.info("Scroll down to view the dashboard")
-                        
-                        return df
+                        # Immediately rerun to hide upload interface and show dashboard
+                        st.rerun()
                     else:
                         st.error("❌ File validation failed. The uploaded file is missing required columns.")
                         
@@ -769,7 +767,7 @@ def _select_favorite(name, stroke):
     if stroke:
         st.session_state["select_stroke"] = stroke
 
-# Sidebar filters and export
+# Initialize session state for filters
 if "favorites" not in st.session_state:
     st.session_state["favorites"] = _load_favorites()
 if "select_swimmer" not in st.session_state:
@@ -778,104 +776,86 @@ if "select_stroke" not in st.session_state:
     initial_strokes = _swimmer_strokes(st.session_state.get("select_swimmer"))
     st.session_state["select_stroke"] = initial_strokes[0] if initial_strokes else None
 
-with st.sidebar:
-    st.markdown("### Filters")
-    with st.expander("Swimmer & Session", expanded=True):
-        swimmer = st.selectbox(
-            'Select Swimmer',
-            swimmers,
-            key="select_swimmer",
-            on_change=_on_swimmer_change,
-            label_visibility="collapsed"
-        )
+# Main page filters (moved from sidebar)
+st.markdown("---")
+filter_col1, filter_col2, filter_col3, filter_col4 = st.columns([3, 2, 2, 1])
 
-        # Filter data by selected swimmer
-        swimmer_data = data[data['Swimmer'] == swimmer]
-
-        # Get available strokes and dates for the selected swimmer
-        available_strokes = swimmer_data['Stroke'].unique().tolist()
-        available_strokes.sort()
-
-        # Add stroke filter
-        if len(available_strokes) > 1:
-            selected_stroke = st.selectbox(
-                'Select Stroke',
-                available_strokes,
-                key="select_stroke",
-                label_visibility="collapsed"
-            )
-            swimmer_data = swimmer_data[swimmer_data['Stroke'] == selected_stroke]
-        else:
-            selected_stroke = available_strokes[0] if available_strokes else None
-
-        # Get available dates for the selected swimmer and stroke
-        available_dates = swimmer_data['Date'].unique().tolist()
-        # Format dates for display
-        date_options = []
-        date_mapping = {}
-        for date in available_dates:
-            if isinstance(date, pd.Timestamp):
-                formatted_date = date.strftime('%d/%m/%Y')
-            elif isinstance(date, str):
-                try:
-                    date_obj = pd.to_datetime(date, dayfirst=True)
-                    formatted_date = date_obj.strftime('%d/%m/%Y')
-                except Exception:
-                    formatted_date = str(date)
-            else:
-                formatted_date = str(date)
-            date_options.append(formatted_date)
-            date_mapping[formatted_date] = date
-
-        # Add date filter if multiple dates available
-        if len(date_options) > 1:
-            selected_date_str = st.selectbox('Select Date', date_options, label_visibility="collapsed")
-            selected_date = date_mapping[selected_date_str]
-            swimmer_data = swimmer_data[swimmer_data['Date'] == selected_date]
-        elif len(date_options) == 1:
-            selected_date_str = date_options[0]
-        else:
-            selected_date_str = 'N/A'
-
-    st.markdown("### Favorites")
-    st.multiselect(
-        "Select favorites",
+with filter_col1:
+    swimmer = st.selectbox(
+        'Select Swimmer',
         swimmers,
-        key="favorites",
-        on_change=_save_favorites
+        key="select_swimmer",
+        on_change=_on_swimmer_change,
     )
 
-    if st.session_state["favorites"]:
-        st.markdown("**Quick Select**")
-        quick_buttons = []
-        for fav_name in st.session_state["favorites"]:
-            for stroke_name in _swimmer_strokes(fav_name):
-                abbr = _stroke_abbrev(stroke_name)
-                label = f"{fav_name} ({abbr})"
-                quick_buttons.append((label, fav_name, stroke_name))
+# Filter data by selected swimmer
+swimmer_data = data[data['Swimmer'] == swimmer]
 
-        if quick_buttons:
-            fav_cols = st.columns(min(3, len(quick_buttons)))
-            for idx, (label, fav_name, stroke_name) in enumerate(quick_buttons):
-                with fav_cols[idx % len(fav_cols)]:
-                    st.button(
-                        label,
-                        key=f"favorite_{fav_name}_{stroke_name}",
-                        on_click=_select_favorite,
-                        args=(fav_name, stroke_name)
-                    )
+# Get available strokes and dates for the selected swimmer
+available_strokes = swimmer_data['Stroke'].unique().tolist()
+available_strokes.sort()
 
-    st.markdown("### Export")
-    if st.button("Export Report", help="Generate PDF report"):
-        st.session_state["request_export"] = True
-        st.session_state["show_bulk_export_dialog"] = False
-    if st.button("Bulk Export", help="Export multiple athlete reports"):
-        st.session_state["show_bulk_export_dialog"] = True
-        st.session_state["show_pdf_dialog"] = False
-        st.session_state["request_export"] = False
-    
-    # Logo settings for PDF export
-    with st.expander("⚙️ PDF Logo Settings"):
+with filter_col2:
+    # Add stroke filter
+    if len(available_strokes) > 1:
+        selected_stroke = st.selectbox(
+            'Select Stroke',
+            available_strokes,
+            key="select_stroke",
+        )
+        swimmer_data = swimmer_data[swimmer_data['Stroke'] == selected_stroke]
+    else:
+        selected_stroke = available_strokes[0] if available_strokes else None
+        st.selectbox('Stroke', [selected_stroke], disabled=True)
+
+# Get available dates for the selected swimmer and stroke
+available_dates = swimmer_data['Date'].unique().tolist()
+# Format dates for display
+date_options = []
+date_mapping = {}
+for date in available_dates:
+    if isinstance(date, pd.Timestamp):
+        formatted_date = date.strftime('%d/%m/%Y')
+    elif isinstance(date, str):
+        try:
+            date_obj = pd.to_datetime(date, dayfirst=True)
+            formatted_date = date_obj.strftime('%d/%m/%Y')
+        except Exception:
+            formatted_date = str(date)
+    else:
+        formatted_date = str(date)
+    date_options.append(formatted_date)
+    date_mapping[formatted_date] = date
+
+with filter_col3:
+    # Add date filter if multiple dates available
+    if len(date_options) > 1:
+        selected_date_str = st.selectbox('Select Date', date_options)
+        selected_date = date_mapping[selected_date_str]
+        swimmer_data = swimmer_data[swimmer_data['Date'] == selected_date]
+    elif len(date_options) == 1:
+        selected_date_str = date_options[0]
+        st.selectbox('Date', [selected_date_str], disabled=True)
+    else:
+        selected_date_str = 'N/A'
+        st.selectbox('Date', ['N/A'], disabled=True)
+
+with filter_col4:
+    # Settings expander for export and advanced options
+    with st.popover("⚙️ Settings", use_container_width=True):
+        st.markdown("**Export**")
+        if st.button("📄 Export Report", help="Generate PDF report", use_container_width=True):
+            st.session_state["request_export"] = True
+            st.session_state["show_bulk_export_dialog"] = False
+            st.rerun()
+        if st.button("📦 Bulk Export", help="Export multiple athlete reports", use_container_width=True):
+            st.session_state["show_bulk_export_dialog"] = True
+            st.session_state["show_pdf_dialog"] = False
+            st.session_state["request_export"] = False
+            st.rerun()
+        
+        st.markdown("---")
+        st.markdown("**PDF Logo Settings**")
         logo_option = st.radio(
             "Logo option",
             options=['default', 'upload', 'none'],
@@ -900,9 +880,9 @@ with st.sidebar:
             st.info("Will use default logo.jpg if available")
         else:
             st.info("PDFs will not include a logo")
-
-    # Admin: Usage Logs (password-gated)
-    with st.expander("📊 Usage Logs"):
+        
+        st.markdown("---")
+        st.markdown("**Usage Logs (Admin)**")
         admin_pass = st.text_input("Admin password", type="password", key="admin_pass")
         try:
             expected_pass = st.secrets.get("admin", {}).get("password", "admin12x25")
@@ -935,6 +915,45 @@ with st.sidebar:
                     st.warning(msg)
         elif admin_pass:
             st.error("Wrong password")
+
+# Favorites section
+with st.expander("⭐ Favorites & Quick Select"):
+    fav_col1, fav_col2 = st.columns([1, 2])
+    
+    with fav_col1:
+        st.multiselect(
+            "Select favorites",
+            swimmers,
+            key="favorites",
+            on_change=_save_favorites
+        )
+    
+    with fav_col2:
+        if st.session_state["favorites"]:
+            st.markdown("**Quick Select**")
+            quick_buttons = []
+            for fav_name in st.session_state["favorites"]:
+                for stroke_name in _swimmer_strokes(fav_name):
+                    abbr = _stroke_abbrev(stroke_name)
+                    label = f"{fav_name} ({abbr})"
+                    quick_buttons.append((label, fav_name, stroke_name))
+
+            if quick_buttons:
+                num_cols = min(4, len(quick_buttons))
+                fav_cols = st.columns(num_cols)
+                for idx, (label, fav_name, stroke_name) in enumerate(quick_buttons):
+                    with fav_cols[idx % num_cols]:
+                        st.button(
+                            label,
+                            key=f"favorite_{fav_name}_{stroke_name}",
+                            on_click=_select_favorite,
+                            args=(fav_name, stroke_name),
+                            use_container_width=True
+                        )
+        else:
+            st.info("Add swimmers to favorites to enable quick selection")
+
+st.markdown("---")
 
 # Get date and stroke info
 row = swimmer_data.iloc[0]
