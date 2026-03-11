@@ -1,8 +1,8 @@
-# 🏊‍♂️ Swimmer Performance Dashboard
+# Swimmer Performance Dashboard
 
 A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data. This tool allows coaches and athletes to upload performance data, visualize metrics like Critical Velocity (CV) and D', evaluate performance against cohort percentiles, and generate customized PDF reports.
 
-## ✨ Features
+## Features
 
 - **Data Upload & Validation**: Upload `.xlsx` or `.xls` files containing split times for 12x25m swimming tests. Provides a downloadable template for ease of use.
 - **Key Metrics Calculation**: Automatically calculates Critical Velocity (CV), D' (Anaerobic Capacity), Peak Speed, Drop-off %, and projected paces for SCM/LCM based on test splits.
@@ -12,7 +12,7 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
 - **PDF Reporting**: Generate detailed individual or bulk PDF reports with velocity curves, percentile rankings, and historical comparisons. Supports custom logo uploads.
 - **Usage Tracking**: Built-in silent activity logging for dashboard usage statistics, accessible via an admin panel.
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 1. **Clone the repository:**
    ```bash
@@ -36,7 +36,7 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
    streamlit run main.py
    ```
 
-## 📊 How to Use
+## How to Use
 
 1. Launch the app using `streamlit run main.py`.
 2. Download the Excel template from the upload page.
@@ -50,7 +50,7 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
 5. Select a swimmer from the sidebar to view their performance metrics, velocity curve, percentile rankings, and historical trends.
 6. Use the **Export Report** or **Bulk Export** buttons in the sidebar to generate PDF reports.
 
-## 📁 Project Structure
+## Project Structure
 
 - `main.py`: The core Streamlit application containing the UI, data processing, and PDF generation logic.
 - `tracker.py`: Utility script for logging app usage and exporting logs to GitHub.
@@ -59,14 +59,14 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
 - `logo.jpg`: Default logo used in PDF report exports.
 - `.gitignore`: Files to be ignored by Git.
 
-## 🛠 Tech Stack
+## Tech Stack
 
 - **Framework**: [Streamlit](https://streamlit.io/)
 - **Data Manipulation**: Pandas, NumPy, SciPy
 - **Data Visualization**: Plotly, Matplotlib
 - **Reporting**: Matplotlib (PDF Generation)
 
-## 🔐 Admin Configuration
+## Admin Configuration
 
 To access the "Usage Logs" panel in the sidebar, you can configure an admin password in your Streamlit secrets (`.streamlit/secrets.toml`):
 
