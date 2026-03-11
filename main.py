@@ -422,7 +422,7 @@ def show_upload_interface():
     """Display the file upload interface with template download"""
     st.markdown("""
     <div style='text-align: center; padding: 2rem 1rem;'>
-        <h1 style='color: #1E40AF; margin-bottom: 0.5rem;'>Swimmer Performance Dashboard</h1>
+        <h1 style='color: #1E40AF; margin-bottom: 0.5rem;'>Swimming - Physiology Reporting</h1>
         <p style='font-size: 1.2rem; color: #6B7280; margin-bottom: 2rem;'>
             Upload your 12x25m test data to generate comprehensive performance reports
         </p>
