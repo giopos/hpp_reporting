@@ -1,6 +1,6 @@
 # HPP Physiology Testing
 
-A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data. This tool allows coaches and athletes to upload performance data, visualize metrics like Critical Velocity (CV) and D', evaluate performance against cohort percentiles, and generate customized PDF reports.
+Streamlit dashboard for analysing 12x25m swimming physiology test data. The app supports upload/validation of session files, automatic metric calculation (e.g. CV and D'), percentile benchmarking, historical tracking, and PDF report export.
 
 ## Features
 
@@ -30,10 +30,10 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
    pip install -r requirements.txt
    ```
 
-4. **(Optional) Configure admin access for usage tracking:**
+4. **(Optional) Configure usage-log access:**
    ```bash
    cp .streamlit/secrets.toml.example .streamlit/secrets.toml
-   # Edit .streamlit/secrets.toml with your own admin password
+   # Edit .streamlit/secrets.toml with your own password
    ```
 
 5. **Run the application:**

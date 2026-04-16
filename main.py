@@ -1,6 +1,4 @@
-#python3 -m streamlit run "/Users/postiglioneg/Desktop/12x25 streamlit/main.py"
-
-# Streamlit app for Swimmer Dashboard
+# Streamlit app for swimming physiology reporting
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -13,7 +11,7 @@ import base64
 from io import BytesIO
 import zipfile
 import matplotlib as mpl
-import matplotlib.pyplot as plt  # Keep for PDF export
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.patches import FancyBboxPatch
 from matplotlib.patches import Rectangle, Circle
@@ -47,7 +45,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Define a consistent color palette - updated for better visual harmony
+# Color palette
 COLOR_BLUE = "#3B82F6"  # Primary blue
 COLOR_NAVY = "#1E40AF"  # Darker blue
 COLOR_RED = "#EF4444"   # Accent red
@@ -456,154 +454,22 @@ def validate_uploaded_file(df):
 
 def show_upload_interface():
     """Display the file upload interface with template download"""
+    # Compact CSS — no HTML wrapper divs that break Streamlit rendering
     st.markdown("""
-    <div style='text-align: center; padding: 2rem 1rem;'>
-        <h1 style='color: #1E40AF; margin-bottom: 0.5rem;'>Swimming - Physiology Reporting</h1>
-        <p style='font-size: 1.2rem; color: #6B7280; margin-bottom: 2rem;'>
-            Upload your 12x25m test data to generate comprehensive performance reports
-        </p>
-    </div>
+    <style>
+        .landing-title { color:#1E40AF; font-size:2.6rem; font-weight:800; margin:0; line-height:1.1; text-align:center; }
+        .landing-subtitle { color:#6B7280; font-size:1.05rem; margin:0.2rem 0 0 0; text-align:center; }
+        .guide-box { background:#F8FAFC; border:1px solid #E2E8F0; border-radius:10px; padding:0.5rem 0.7rem; margin-bottom:0.4rem; }
+        .guide-box h5 { margin:0 0 0.15rem 0; font-size:0.88rem; color:#111827; }
+        .guide-box ul { margin:0; padding-left:1rem; font-size:0.82rem; color:#4B5563; line-height:1.25; }
+    </style>
     """, unsafe_allow_html=True)
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    
-    with col2:
-        # Template download section
-        st.markdown("### Download Template")
-        st.markdown("First time using this app? Download the Excel template to ensure your data is formatted correctly.")
-        
-        template_bytes = load_template_file()
-        if template_bytes:
-            if st.download_button(
-                label="⬇ Download Excel Template",
-                data=template_bytes,
-                file_name="12x25m_Data_Template.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True
-            ):
-                tracker.track_template_download()
-        else:
-            st.warning("Template file not found. Please ensure '12x25m Data Test.xlsx' is in the app directory.")
-        
-        st.markdown("---")
-        
-        # File upload section
-        st.markdown("### Upload Your Data")
-        st.markdown("Upload your completed Excel file with swimmer test data:")
-        
-        uploaded_file = st.file_uploader(
-            "Choose an Excel file",
-            type=['xlsx', 'xls'],
-            help="Upload an Excel file (.xlsx or .xls) with your 12x25m test data",
-            label_visibility="collapsed"
-        )
-        
-        if uploaded_file is not None:
-            with st.spinner("Loading and validating data..."):
-                try:
-                    # Load the data
-                    df = load_data(uploaded_file)
-                    df = calculate_stroke_efficiency(df)
 
-                    if df is None:
-                        st.error("Failed to load the Excel file. Please check the file format.")
-                        return None
-                    
-                    # Validate the structure
-                    validation = validate_uploaded_file(df)
-                    
-                    if validation['valid'] and len(df) == 0:
-                        st.warning("The file has the correct columns but contains no data rows. Please add swimmer data and re-upload.")
-                        return None
-
-                    if validation['valid']:
-                        st.success(f"File uploaded successfully! Found {len(df)} records.")
-                        
-                        # Show data summary
-                        swimmers_count = df['Swimmer'].nunique()
-                        strokes = df['Stroke'].dropna().unique().tolist()
-                        dates = df['Date'].dropna().unique()
-                        
-                        st.markdown("**Data Summary:**")
-                        col_a, col_b, col_c = st.columns(3)
-                        with col_a:
-                            st.metric("Swimmers", swimmers_count)
-                        with col_b:
-                            st.metric("Strokes", len(strokes))
-                        with col_c:
-                            st.metric("Sessions", len(dates))
-                        
-                        if validation['warnings']:
-                            with st.expander("Additional columns detected (not used in analysis)"):
-                                st.write(", ".join(validation['warnings']))
-                        
-                        # Store in session state
-                        st.session_state['data'] = df
-                        st.session_state['uploaded_file_name'] = uploaded_file.name
-                        st.session_state['upload_timestamp'] = pd.Timestamp.now()
-                        tracker.track_file_upload(uploaded_file.name, len(df), swimmers_count)
-                        
-                        # Immediately rerun to hide upload interface and show dashboard
-                        st.rerun()
-                    else:
-                        st.error("❌ File validation failed. The uploaded file is missing required columns.")
-                        
-                        # Show comparison
-                        st.markdown("### 📋 Template Comparison")
-                        st.markdown("**Missing Required Columns:**")
-                        if validation['missing']:
-                            for col in validation['missing']:
-                                st.markdown(f"- ❌ `{col}`")
-                        else:
-                            st.markdown("- ✅ All required columns present")
-                        
-                        if validation['extra']:
-                            st.markdown("**Extra Columns (will be ignored):**")
-                            for col in validation['extra']:
-                                st.markdown(f"- ⚠️ `{col}`")
-                        
-                        st.markdown("---")
-                        st.info("💡 **Tip:** Download the template above and ensure your file has the same column structure.")
-                        
-                        return None
-                        
-                except Exception as e:
-                    st.error(f"Error reading file: {str(e)}")
-                    st.info("Please ensure the file is a valid Excel file (.xlsx or .xls) and not corrupted.")
-                    return None
-        
-        # Instructions when no file uploaded
-        st.markdown("""
-        <div style='background-color: #F3F4F6; padding: 1rem; border-radius: 8px; margin-top: 1rem;'>
-            <h4 style='margin-top: 0; color: #1F2937;'>Required Columns</h4>
-            <ul style='color: #6B7280;'>
-                <li><strong>Swimmer</strong> - Athlete name</li>
-                <li><strong>Gender</strong> - M/F</li>
-                <li><strong>Stroke</strong> - Freestyle, Backstroke, Breaststroke, or Butterfly</li>
-                <li><strong>Date</strong> - Test date</li>
-                <li><strong>Time 1</strong> through <strong>Time 12</strong> - Split times in seconds for each 25m rep</li>
-            </ul>
-            <h4 style='color: #1F2937;'>Optional Profile Columns</h4>
-            <ul style='color: #6B7280;'>
-                <li>Age, Para, Club, 100 m PB</li>
-            </ul>
-            <h4 style='color: #1F2937;'>Optional Performance Columns</h4>
-            <ul style='color: #6B7280;'>
-                <li><strong>Stroke Rate</strong> (1-12) - needed for efficiency calculations</li>
-                <li><strong>Stroke Count</strong> (1-12)</li>
-                <li><strong>Velocity</strong> (1-12)</li>
-            </ul>
-            <h4 style='color: #1F2937;'>Auto-Calculated</h4>
-            <ul style='color: #6B7280;'>
-                <li><strong>Stroke Efficiency Index</strong> - calculated from Time + Stroke Rate when both are present</li>
-                <li><strong>CV</strong> (Critical Velocity), <strong>Dprime</strong>, <strong>Peak Speed</strong> - always calculated from split times</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
-        # Settings on splash screen
-        with st.popover("⚙️ Settings"):
-            st.markdown("**Usage Logs (Admin)**")
+    # ── Top bar: empty left + gear popover right ──
+    _, top_right = st.columns([18, 1])
+    with top_right:
+        with st.popover("⚙️", use_container_width=True):
+            st.markdown("**Usage Logs**")
             splash_admin_pass = st.text_input("Admin password", type="password", key="splash_admin_pass")
             try:
                 splash_expected_pass = st.secrets["admin"]["password"]
@@ -630,9 +496,112 @@ def show_upload_interface():
                         key="splash_download_logs_btn"
                     )
             elif splash_admin_pass:
-                st.error("Wrong password")
+                st.error("Incorrect password")
 
-        return None
+    # ── Hero title ──
+    st.markdown(
+        "<h1 class='landing-title'>Swimming Physiology Reporting</h1>"
+        "<p class='landing-subtitle'>Upload your 12x25m test data to generate comprehensive performance reports</p>",
+        unsafe_allow_html=True,
+    )
+
+    # ── Two-column body ──
+    col_left, col_right = st.columns([1.15, 0.85], gap="medium")
+
+    with col_left:
+        st.markdown("#### 1) Download Template")
+        st.caption("Use the starter sheet to match required column formatting.")
+        template_bytes = load_template_file()
+        if template_bytes:
+            if st.download_button(
+                label="⬇ Download Excel Template",
+                data=template_bytes,
+                file_name="12x25m_Data_Template.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            ):
+                tracker.track_template_download()
+        else:
+            st.warning("Template file not found. Please ensure '12x25m Data Test.xlsx' is in the app directory.")
+
+        st.markdown("---")
+        st.markdown("#### 2) Upload Your Data")
+        uploaded_file = st.file_uploader(
+            "Choose an Excel file",
+            type=['xlsx', 'xls'],
+            help="Upload an Excel file (.xlsx or .xls) with your 12x25m test data",
+            label_visibility="collapsed",
+        )
+
+        if uploaded_file is not None:
+            with st.spinner("Loading and validating data..."):
+                try:
+                    df = load_data(uploaded_file)
+                    df = calculate_stroke_efficiency(df)
+
+                    if df is None:
+                        st.error("Failed to load the Excel file. Please check the file format.")
+                        return None
+
+                    validation = validate_uploaded_file(df)
+                    if validation['valid'] and len(df) == 0:
+                        st.warning("The file has the correct columns but contains no data rows. Please add swimmer data and re-upload.")
+                        return None
+
+                    if validation['valid']:
+                        st.success(f"File uploaded successfully! Found {len(df)} records.")
+                        swimmers_count = df['Swimmer'].nunique()
+                        strokes = df['Stroke'].dropna().unique().tolist()
+                        dates = df['Date'].dropna().unique()
+
+                        col_a, col_b, col_c = st.columns(3)
+                        with col_a:
+                            st.metric("Swimmers", swimmers_count)
+                        with col_b:
+                            st.metric("Strokes", len(strokes))
+                        with col_c:
+                            st.metric("Sessions", len(dates))
+
+                        if validation['warnings']:
+                            with st.expander("Additional columns detected (not used in analysis)"):
+                                st.write(", ".join(validation['warnings']))
+
+                        st.session_state['data'] = df
+                        st.session_state['uploaded_file_name'] = uploaded_file.name
+                        st.session_state['upload_timestamp'] = pd.Timestamp.now()
+                        tracker.track_file_upload(uploaded_file.name, len(df), swimmers_count)
+                        st.rerun()
+                    else:
+                        st.error("❌ File validation failed. The uploaded file is missing required columns.")
+                        if validation['missing']:
+                            st.markdown("**Missing Required Columns:**")
+                            for col in validation['missing']:
+                                st.markdown(f"- ❌ `{col}`")
+                        if validation['extra']:
+                            st.markdown("**Extra Columns (ignored):**")
+                            for col in validation['extra']:
+                                st.markdown(f"- ⚠️ `{col}`")
+                        st.info("Download the template above and ensure your file uses the same column structure.")
+                        return None
+                except Exception as e:
+                    st.error(f"Error reading file: {str(e)}")
+                    st.info("Please ensure the file is a valid Excel file (.xlsx or .xls) and not corrupted.")
+                    return None
+
+    with col_right:
+        st.markdown("#### Data Format Guide")
+        st.markdown("""
+        <div class='guide-box'><h5>Required</h5>
+        <ul><li><strong>Swimmer</strong>, <strong>Gender</strong>, <strong>Stroke</strong>, <strong>Date</strong></li>
+        <li><strong>Time 1–12</strong> split times (seconds)</li></ul></div>
+        <div class='guide-box'><h5>Optional Profile</h5>
+        <ul><li><strong>Age</strong>, <strong>Para</strong>, <strong>Club</strong>, <strong>100 m PB</strong></li></ul></div>
+        <div class='guide-box'><h5>Optional / Auto-Calculated</h5>
+        <ul><li><strong>Stroke Rate 1–12</strong>, <strong>Stroke Count 1–12</strong></li>
+        <li><strong>SEI</strong>, <strong>Velocity</strong>, <strong>CV</strong>, <strong>Dprime</strong>, <strong>Peak Speed</strong></li></ul></div>
+        """, unsafe_allow_html=True)
+
+    return None
 
 # Initialize session state
 if 'data' not in st.session_state:
@@ -964,7 +933,7 @@ with filter_col4:
             st.info("PDFs will not include a logo")
         
         st.markdown("---")
-        st.markdown("**Usage Logs (Admin)**")
+        st.markdown("**Usage Logs**")
         admin_pass = st.text_input("Admin password", type="password", key="admin_pass")
         try:
             expected_pass = st.secrets["admin"]["password"]
@@ -990,14 +959,14 @@ with filter_col4:
                     mime="application/json",
                     key="download_logs_btn"
                 )
-            if st.button("Push logs to GitHub", key="push_logs_btn"):
+            if st.button("Sync logs to GitHub", key="push_logs_btn"):
                 ok, msg = tracker.push_logs_to_github()
                 if ok:
                     st.success(msg)
                 else:
                     st.warning(msg)
         elif admin_pass:
-            st.error("Wrong password")
+            st.error("Incorrect password")
 
 # Favorites section
 with st.expander("⭐ Favorites & Quick Select"):
@@ -1506,13 +1475,15 @@ def create_export_pdf(swimmer_name=None, swimmer_df=None):
 
                 def _gradient_color(value):
                     if value < 50:
-                        r = 255
-                        g = int(255 * (value / 50))
-                        b = 0
+                        # Stronger red -> amber transition
+                        r = 220 + int(35 * (value / 50))
+                        g = 40 + int(130 * (value / 50))
+                        b = 38
                     else:
-                        r = int(255 * (1 - (value - 50) / 50))
-                        g = int(180 + 75 * ((value - 50) / 50))
-                        b = int(80 * ((value - 50) / 50))
+                        # Stronger amber -> green transition
+                        r = 255 - int(220 * ((value - 50) / 50))
+                        g = 170 + int(50 * ((value - 50) / 50))
+                        b = 38 + int(20 * ((value - 50) / 50))
                     return (r / 255, g / 255, b / 255)
 
                 colors = [_gradient_color(v) for v in values]
@@ -1557,7 +1528,7 @@ def create_export_pdf(swimmer_name=None, swimmer_df=None):
 
             else:
                 fig.text(0.5, 0.5,
-                         "Percentile analysis requires Gender, Stroke, and 100m PB data.",
+                         "Percentile analysis requires Gender, Stroke, and 100 m PB.\nIf 100 m PB is missing, relative comparison metrics are not shown.",
                          ha='center', va='center', fontsize=10, color=COLOR_SECONDARY_TEXT)
 
             _add_logo_footer(fig)
@@ -2280,15 +2251,15 @@ if filtered_percentile_data and pb_100m and not pd.isna(pb_100m):
         # Create color gradient (red -> gold -> green)
         def get_gradient_color(value):
             if value < 50:
-                # Red to Gold
-                r = 255
-                g = int(255 * (value / 50))
-                b = 0
+                # Stronger Red to Amber
+                r = 220 + int(35 * (value / 50))
+                g = 40 + int(130 * (value / 50))
+                b = 38
             else:
-                # Gold to Green
-                r = int(255 * (1 - (value - 50) / 50))
-                g = int(180 + 75 * ((value - 50) / 50))
-                b = int(80 * ((value - 50) / 50))
+                # Stronger Amber to Green
+                r = 255 - int(220 * ((value - 50) / 50))
+                g = 170 + int(50 * ((value - 50) / 50))
+                b = 38 + int(20 * ((value - 50) / 50))
             return f'rgb({r},{g},{b})'
         
         bar_colors = [get_gradient_color(v) for v in metric_values]
@@ -2384,7 +2355,7 @@ if filtered_percentile_data and pb_100m and not pd.isna(pb_100m):
             st.plotly_chart(fig, use_container_width=True, config={'displayModeBar': False})
 
 else:
-    st.markdown("<div class='info-message'>Percentile analysis requires Gender, Stroke, and 100m PB data</div>", unsafe_allow_html=True)
+    st.markdown("<div class='info-message'>Percentile analysis requires Gender, Stroke, and 100 m PB. If 100 m PB is missing, relative comparison metrics are not shown.</div>", unsafe_allow_html=True)
 
 ###############################################################################
 # HISTORICAL ANALYSIS SECTION

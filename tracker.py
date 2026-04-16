@@ -1,7 +1,6 @@
 """
 Usage tracker for Swimmer Dashboard.
 Logs activity to a local JSONL file and can push logs to GitHub repo.
-All tracking is silent — errors never surface to users.
 """
 
 import datetime
@@ -43,7 +42,7 @@ def log_event(event: str, details: Optional[dict] = None):
         with open(LOG_FILE, "a") as f:
             f.write(json.dumps(entry, default=str) + "\n")
     except Exception:
-        pass  # never break the app
+        pass
 
 
 def track_app_start():
@@ -109,7 +108,7 @@ def track_swimmer_view(swimmer: str, stroke: str, date: str):
 
 def push_logs_to_github():
     """
-    Push the JSONL log to the private GitHub repo.
+    Push the JSONL log to the configured GitHub repository.
     Requires these Streamlit secrets:
         [github]
         token = "ghp_..."
