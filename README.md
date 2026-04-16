@@ -30,7 +30,13 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
    pip install -r requirements.txt
    ```
 
-4. **Run the application:**
+4. **(Optional) Configure admin access for usage tracking:**
+   ```bash
+   cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+   # Edit .streamlit/secrets.toml with your own admin password
+   ```
+
+5. **Run the application:**
    ```bash
    streamlit run main.py
    ```
@@ -39,12 +45,11 @@ A comprehensive Streamlit-based dashboard for analyzing 12x25m swimmer test data
 
 1. Launch the app using `streamlit run main.py`.
 2. Download the Excel template from the upload page.
-3. Fill in the template with your athletes' 12x25m test data. Required columns include:
-   - `Swimmer` (Name)
-   - `Gender` (M/F)
-   - `Stroke` (Freestyle, Backstroke, Breaststroke, Butterfly)
-   - `Date` (Test date)
-   - `Time 1` to `Time 12` (Split times in seconds for each 25m rep)
+3. Fill in the template with your athletes' 12x25m test data.
+   - **Required:** `Swimmer`, `Gender` (M/F), `Stroke` (Freestyle/Backstroke/Breaststroke/Butterfly), `Date`, `Time 1`–`Time 12` (split times in seconds)
+   - **Optional profile:** `Age`, `Para`, `Club`, `100 m PB`
+   - **Optional performance:** `Stroke Rate 1`–`12` (needed for efficiency calculations), `Stroke Count 1`–`12`, `Velocity 1`–`12`
+   - **Auto-calculated:** Stroke Efficiency Index (from Time + Stroke Rate), CV, Dprime, Peak Speed
 4. Upload the completed Excel file to the dashboard.
 5. Select a swimmer from the sidebar to view their performance metrics, velocity curve, percentile rankings, and historical trends.
 6. Use the **Export Report** or **Bulk Export** buttons in the sidebar to generate PDF reports.

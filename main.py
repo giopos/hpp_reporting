@@ -398,19 +398,55 @@ def load_template_file():
     except FileNotFoundError:
         return None
 
+def calculate_stroke_efficiency(df):
+    """Auto-calculate Stroke Efficiency Index when Time and Stroke Rate are present.
+
+    Formula:
+        velocity = 25 / split_time
+        distance_per_stroke = velocity / (stroke_rate / 60)
+        SEI = velocity * distance_per_stroke
+
+    Preserves user-provided SEI values; only fills missing ones.
+    """
+    if df is None or df.empty:
+        return df
+
+    for i in range(1, 13):
+        time_col = f"Time {i}"
+        sr_col = f"Stroke Rate {i}"
+        sei_col = f"Stroke Efficiency Index {i}"
+        if time_col not in df.columns or sr_col not in df.columns:
+            continue
+
+        split_time = pd.to_numeric(df[time_col], errors="coerce")
+        stroke_rate = pd.to_numeric(df[sr_col], errors="coerce")
+        velocity = 25 / split_time
+        distance_per_stroke = velocity / (stroke_rate / 60)
+        computed_sei = velocity * distance_per_stroke
+
+        if sei_col in df.columns:
+            existing_sei = pd.to_numeric(df[sei_col], errors="coerce")
+            df[sei_col] = existing_sei.where(existing_sei.notna(), computed_sei)
+        else:
+            df[sei_col] = computed_sei
+
+    return df
+
 def validate_uploaded_file(df):
     """Validate uploaded Excel file structure against expected template"""
     required_columns = ['Swimmer', 'Gender', 'Stroke', 'Date'] + [f'Time {i}' for i in range(1, 13)]
     optional_columns = (
+        ['Age', 'Para', 'Club', '100 m PB'] +
         [f'Stroke Rate {i}' for i in range(1, 13)] +
         [f'Stroke Count {i}' for i in range(1, 13)] +
         [f'Stroke Efficiency Index {i}' for i in range(1, 13)] +
+        [f'Velocity {i}' for i in range(1, 13)] +
         ['CV', 'Dprime']
     )
-    
+
     missing_cols = [col for col in required_columns if col not in df.columns]
     extra_cols = [col for col in df.columns if col not in required_columns + optional_columns]
-    
+
     return {
         'valid': len(missing_cols) == 0,
         'missing': missing_cols,
@@ -467,7 +503,8 @@ def show_upload_interface():
                 try:
                     # Load the data
                     df = load_data(uploaded_file)
-                    
+                    df = calculate_stroke_efficiency(df)
+
                     if df is None:
                         st.error("Failed to load the Excel file. Please check the file format.")
                         return None
@@ -542,10 +579,20 @@ def show_upload_interface():
                 <li><strong>Date</strong> - Test date</li>
                 <li><strong>Time 1</strong> through <strong>Time 12</strong> - Split times in seconds for each 25m rep</li>
             </ul>
-            <h4 style='color: #1F2937;'>Optional Columns</h4>
+            <h4 style='color: #1F2937;'>Optional Profile Columns</h4>
             <ul style='color: #6B7280;'>
-                <li>Stroke Rate, Stroke Count, Stroke Efficiency Index (1-12)</li>
-                <li>CV (Critical Velocity), Dprime - will be calculated if not provided</li>
+                <li>Age, Para, Club, 100 m PB</li>
+            </ul>
+            <h4 style='color: #1F2937;'>Optional Performance Columns</h4>
+            <ul style='color: #6B7280;'>
+                <li><strong>Stroke Rate</strong> (1-12) - needed for efficiency calculations</li>
+                <li><strong>Stroke Count</strong> (1-12)</li>
+                <li><strong>Velocity</strong> (1-12)</li>
+            </ul>
+            <h4 style='color: #1F2937;'>Auto-Calculated</h4>
+            <ul style='color: #6B7280;'>
+                <li><strong>Stroke Efficiency Index</strong> - calculated from Time + Stroke Rate when both are present</li>
+                <li><strong>CV</strong> (Critical Velocity), <strong>Dprime</strong>, <strong>Peak Speed</strong> - always calculated from split times</li>
             </ul>
         </div>
         """, unsafe_allow_html=True)
@@ -885,10 +932,12 @@ with filter_col4:
         st.markdown("**Usage Logs (Admin)**")
         admin_pass = st.text_input("Admin password", type="password", key="admin_pass")
         try:
-            expected_pass = st.secrets.get("admin", {}).get("password", "admin12x25")
-        except Exception:
-            expected_pass = "admin12x25"
-        if admin_pass == expected_pass:
+            expected_pass = st.secrets["admin"]["password"]
+        except (KeyError, FileNotFoundError):
+            expected_pass = None
+        if admin_pass and expected_pass is None:
+            st.info("Admin password not configured. Set [admin] password in .streamlit/secrets.toml.")
+        elif admin_pass and admin_pass == expected_pass:
             logs = tracker.read_logs()
             summary = tracker.summarise_logs(logs)
             st.metric("Total events", summary["total_events"])
@@ -906,7 +955,6 @@ with filter_col4:
                     mime="application/json",
                     key="download_logs_btn"
                 )
-            # Optional: push to GitHub
             if st.button("Push logs to GitHub", key="push_logs_btn"):
                 ok, msg = tracker.push_logs_to_github()
                 if ok:
