@@ -597,7 +597,8 @@ def show_upload_interface():
         <div class='guide-box'><h5>Optional Profile</h5>
         <ul><li><strong>Age</strong>, <strong>Para</strong>, <strong>Club</strong>, <strong>100 m PB</strong></li></ul></div>
         <div class='guide-box'><h5>Optional / Auto-Calculated</h5>
-        <ul><li><strong>Stroke Rate 1–12</strong>, <strong>Stroke Count 1–12</strong></li>
+        <ul><li><strong>Stroke Rate 1–12 (Required for SEI) </strong>, <strong>Stroke Count 1–12</strong></li>
+        <div class='guide-box'><h5>Auto-Calculated</h5>
         <li><strong>SEI</strong>, <strong>Velocity</strong>, <strong>CV</strong>, <strong>Dprime</strong>, <strong>Peak Speed</strong></li></ul></div>
         """, unsafe_allow_html=True)
 
