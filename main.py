@@ -512,6 +512,10 @@ def show_upload_interface():
                     # Validate the structure
                     validation = validate_uploaded_file(df)
                     
+                    if validation['valid'] and len(df) == 0:
+                        st.warning("The file has the correct columns but contains no data rows. Please add swimmer data and re-upload.")
+                        return None
+
                     if validation['valid']:
                         st.success(f"File uploaded successfully! Found {len(df)} records.")
                         
@@ -596,7 +600,38 @@ def show_upload_interface():
             </ul>
         </div>
         """, unsafe_allow_html=True)
-        
+
+        # Settings on splash screen
+        with st.popover("⚙️ Settings"):
+            st.markdown("**Usage Logs (Admin)**")
+            splash_admin_pass = st.text_input("Admin password", type="password", key="splash_admin_pass")
+            try:
+                splash_expected_pass = st.secrets["admin"]["password"]
+            except (KeyError, FileNotFoundError):
+                splash_expected_pass = None
+            if splash_admin_pass and splash_expected_pass is None:
+                st.info("Admin password not configured. Set [admin] password in .streamlit/secrets.toml.")
+            elif splash_admin_pass and splash_admin_pass == splash_expected_pass:
+                logs = tracker.read_logs()
+                summary = tracker.summarise_logs(logs)
+                st.metric("Total events", summary["total_events"])
+                st.metric("Unique sessions", summary["unique_sessions"])
+                if summary["events_breakdown"]:
+                    st.markdown("**Events:**")
+                    for evt, count in sorted(summary["events_breakdown"].items(), key=lambda x: -x[1]):
+                        st.text(f"  {evt}: {count}")
+                log_bytes = tracker.get_log_file_bytes()
+                if log_bytes:
+                    st.download_button(
+                        "📥 Download Logs",
+                        data=log_bytes,
+                        file_name="usage_logs.jsonl",
+                        mime="application/json",
+                        key="splash_download_logs_btn"
+                    )
+            elif splash_admin_pass:
+                st.error("Wrong password")
+
         return None
 
 # Initialize session state
